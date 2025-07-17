@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 Daily Mood Tracker 🌸</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #fff0f5;
+            color: #ff69b4;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 0 15px #ffb6c1;
+            border: 3px solid #ffb6c1;
+        }
+        
+        h1 {
+            color: #ff1493;
+            text-shadow: 2px 2px 0 #ffb6c1;
+            font-size: 2.5em;
+        }
+        
+        .mood-options {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .mood-option {
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px;
+        }
+        
+        .mood-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .mood-option img {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .mood-option p {
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        
+        textarea {
+            width: 80%;
+            height: 100px;
+            margin: 20px 0;
+            padding: 10px;
+            border: 2px solid #ffb6c1;
+            border-radius: 10px;
+            font-family: inherit;
+            resize: none;
+        }
+        
+        button {
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            margin: 10px;
+        }
+        
+        button:hover {
+            background-color: #ff1493;
+            transform: scale(1.05);
+        }
+        
+        .history {
+            margin-top: 30px;
+            text-align: left;
+            border-top: 2px dashed #ffb6c1;
+            padding-top: 20px;
+        }
+        
+        .entry {
+            background-color: #fff0f5;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border-left: 5px solid #ff69b4;
+        }
+        
+        .date {
+            font-weight: bold;
+            color: #ff1493;
+        }
+        
+        .mood-display {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+        
+        .selected {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 5px #ff69b4);
+        }
+        
+        .heart {
+            position: fixed;
+            font-size: 20px;
+            color: #ffb6c1;
+            animation: float 5s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🌸 Daily Mood Tracker 🌸</h1>
+        <p>How are you feeling today, cutie?</p>
+
+        <div class="mood-options">
+            <div class="mood-option" data-mood="😊">
+                <img src="https://emojicdn.elk.sh/😊?size=80" alt="Happy">
+                <p>Happy</p>
+            </div>
+            <div class="mood-option" data-mood="😢">
+                <img src="https://emojicdn.elk.sh/😢?size=80" alt="Sad">
+                <p>Sad</p>
+            </div>
+            <div class="mood-option" data-mood="😴">
+                <img src="https://emojicdn.elk.sh/😴?size=80" alt="Tired">
+                <p>Tired</p>
+            </div>
+            <div class="mood-option" data-mood="😍">
+                <img src="https://emojicdn.elk.sh/😍?size=80" alt="Loved">
+                <p>Loved</p>
+            </div>
+            <div class="mood-option" data-mood="😠">
+                <img src="https://emojicdn.elk.sh/😠?size=80" alt="Angry">
+                <p>Angry</p>
+            </div>
+        </div>
+
+        <p>Tell me more about your day:</p>
+        <textarea id="mood-note" placeholder="What made you feel this way? 💖"></textarea>
+
+        <button id="save-btn">Save My Mood 💕</button>
+        <button id="clear-btn">Clear All</button>
+
+        <div class="history">
+            <h2>Your Mood History 🌈</h2>
+            <div id="mood-history"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const moodOptions = document.querySelectorAll('.mood-option');
+            const saveBtn = document.getElementById('save-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const moodNote = document.getElementById('mood-note');
+            const moodHistory = document.getElementById('mood-history');
+
+            let selectedMood = null;
+
+            // Load saved moods from localStorage
+            loadMoodHistory();
+
+            // Mood selection
+            moodOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    moodOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedMood = this.getAttribute('data-mood');
+                });
+            });
+
+            // Save mood
+            saveBtn.addEventListener('click', function() {
+                if (!selectedMood) {
+                    alert('Please select a mood first!');
+                    return;
+                }
+
+                const note = moodNote.value.trim();
+                const now = new Date();
+                const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const moodEntry = {
+                    date: dateStr,
+                    mood: selectedMood,
+                    note: note
+                };
+
+                // Save to localStorage
+                let moods = JSON.parse(localStorage.getItem('moodHistory') || '[]');
+                moods.unshift(moodEntry); // Add new entry at beginning
+                localStorage.setItem('moodHistory', JSON.stringify(moods));
+
+                // Update display
+                loadMoodHistory();
+
+                // Reset form
+                moodNote.value = '';
+                moodOptions.forEach(opt => opt.classList.remove('selected'));
+                selectedMood = null;
+
+                // Show hearts animation
+                createHearts();
+            });
+
+            // Clear all
+            clearBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear all your mood history? 💔')) {
+                    localStorage.removeItem('moodHistory');
+                    moodHistory.innerHTML = '<p>No mood entries yet. Your history will appear here!</p>';
+                }
+            });
+
+            // Load mood history
+            function loadMoodHistory() {
+                const moods = JSON.parse(localStorage.getItem('moodHistory') || '[]');
+
+                if (moods.length === 0) {
+                    moodHistory.innerHTML = '<p>No mood entries yet. Your history will appear here!</p>';
+                    return;
+                }
+
+                moodHistory.innerHTML = '';
+                moods.forEach(entry => {
+                    const entryEl = document.createElement('div');
+                    entryEl.className = 'entry';
+                    entryEl.innerHTML = `
+                        <div>
+                            <span class="mood-display">${entry.mood}</span>
+                            <span class="date">${entry.date}</span>
+                        </div>
+                        <p>${entry.note || 'No notes for this day.'}</p>
+                    `;
+                    moodHistory.appendChild(entryEl);
+                });
+            }
+
+            // Create floating hearts
+            function createHearts() {
+                for (let i = 0; i < 10; i++) {
+                    const heart = document.createElement('div');
+                    heart.className = 'heart';
+                    heart.innerHTML = '💖';
+                    heart.style.left = Math.random() * 100 + 'vw';
+                    heart.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    document.body.appendChild(heart);
+
+                    // Remove heart after animation
+                    setTimeout(() => {
+                        heart.remove();
+                    }, 5000);
+                }
+            }
+
+            // Add some random hearts on page load
+            for (let i = 0; i < 5; i++) {
+                setTimeout(createHearts, i * 300);
+            }
+        });
+    </script>
+</body>
+
+</html>
